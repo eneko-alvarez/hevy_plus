@@ -1,6 +1,8 @@
 # 🏋️ Gym Workout Visualizer
 
-A modern and responsive web application for visualizing workout data exported from the **Hevy** fitness app. It allows users to upload workout files and view interactive statistics, charts, and tables to analyze exercise performance.
+A modern and responsive web application for visualizing workout data exported from the **Hevy** fitness app. It allows users to upload workout files and view interactive statistics, charts, and tables to analyze exercise performance.  
+🔗 **Public view**: [https://eneko-alvarez.github.io/hevy_plus/](https://eneko-alvarez.github.io/hevy_plus/)
+
 
 ## 💡 Features
 
