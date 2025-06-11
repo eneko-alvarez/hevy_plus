@@ -1,0 +1,127 @@
+   <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hevy Plus+</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="functions.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏋️‍♀️ Analizador de Entrenamientos</h1>
+            <p>Analiza tus datos de entrenamiento <strong>de Hevy</strong> y obtén estadísticas completas</p>
+            <p>Para saber como obtener el fichero, instrucciones <a href="help.html">aqui</a>.</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="file-upload" id="fileUpload">
+                <div class="upload-text">📁 Arrastra tu archivo CSV aquí</div>
+                <div class="upload-subtext">o haz clic para seleccionar archivo</div>
+                <input type="file" id="fileInput" accept=".csv" />
+            </div>
+        </div>
+
+        <div id="errorContainer"></div>
+
+        <div id="controlsContainer" class="controls-section hidden">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="timeRange">Rango de Tiempo:</label>
+                    <select id="timeRange">
+                        <option value="all">Todo el tiempo</option>
+                        <option value="currentYear">Año en curso</option>
+                        <option value="lastYear">Último año</option>
+                        <option value="last6months">Últimos 6 meses</option>
+                        <option value="last3months">Últimos 3 meses</option>
+                        <option value="lastMonth">Último mes</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="statsContainer" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number highlight" id="totalWorkouts">0</div>
+                    <div class="stat-label">Entrenamientos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalExercises">0</div>
+                    <div class="stat-label">Ejercicios Únicos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalSets">0</div>
+                    <div class="stat-label">Series Totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalVolume">0</div>
+                    <div class="stat-label">Volumen (kg)</div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">Volumen por Ejercicio (Top 10)</h3>
+                    <canvas id="volumeChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title" id="progressChartTitle">Progreso de Peso</h3>
+                    <div class="control-group" style="margin-bottom: 20px;">
+                        <label for="exerciseSelect">Ejercicio para Progreso:</label>
+                        <select id="exerciseSelect" style="padding: 8px 12px; border: 1px solid #bdc3c7; border-radius: 4px; background: #ffffff; color: #2c3e50; font-size: 0.9rem; cursor: pointer; width: 100%;">
+                        </select>
+                    </div>
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Entrenamientos por Día</h3>
+                    <canvas id="frequencyChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Top 10 Ejercicios Estancados</h3>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table id="stagnantExercisesTable" style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: #f8f9fa;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ecf0f1; font-weight: 600; color: #2c3e50;">Ejercicio</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ecf0f1; font-weight: 600; color: #2c3e50;">Sesiones Sin Progreso</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ecf0f1; font-weight: 600; color: #2c3e50;">Peso Máximo (kg)</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ecf0f1; font-weight: 600; color: #2c3e50;">Última Mejora</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Entrenamientos Más Frecuentes</h3>
+                    <canvas id="workoutFrequencyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="exercises-table">
+                <div class="table-header">
+                    <h3 class="table-title">Resumen de Ejercicios</h3>
+                    <button id="showMoreBtn" class="show-more-btn">Mostrar más</button>
+                </div>
+                <table id="exercisesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="exercise">Ejercicio</th>
+                            <th class="sortable" data-column="sets">Series</th>
+                            <th class="sortable" data-column="maxWeight">Peso Máximo (kg)</th>
+                            <th class="sortable" data-column="totalVolume">Volumen Total (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
