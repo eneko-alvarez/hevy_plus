@@ -1,6 +1,6 @@
-# 🏋️ Strong Workout Visualizer
+# 🏋️ Gym Workout Visualizer
 
-A modern and responsive web application for visualizing workout data exported from the **Strong** fitness app. It allows users to upload workout files and view interactive statistics, charts, and tables to analyze exercise performance.
+A modern and responsive web application for visualizing workout data exported from the **Hevy** fitness app. It allows users to upload workout files and view interactive statistics, charts, and tables to analyze exercise performance.
 
 ## 💡 Features
 
@@ -53,12 +53,6 @@ A modern and responsive web application for visualizing workout data exported fr
 2. Open the web page.
 3. Upload the exported file in the upload section.
 4. Explore the automatically generated stats, charts, and tables.
-
-## 📎 File Structure
-
-- `index.html` – Main HTML page  
-- `style.css` – All visual styling and layout rules  
-- `script.js` – App logic (e.g., parsing data, rendering charts)
 
 ## 📌 Notes
 
