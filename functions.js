@@ -261,10 +261,10 @@ function createVolumeChart() {
 
 function createProgressChart() {
     const selectedExercise = exerciseSelect.value;
-    
-    // Obtener peso máximo por sesión (día + título)
+
+    // Construir sesiones únicas por título-fecha para ese ejercicio
     const sessionsMap = new Map();
-    
+
     filteredData
         .filter(row => row.exercise_title === selectedExercise)
         .forEach(row => {
@@ -272,21 +272,32 @@ function createProgressChart() {
             if (!sessionsMap.has(sessionKey) || sessionsMap.get(sessionKey).weight < row.weight_kg) {
                 sessionsMap.set(sessionKey, {
                     date: row.start_time,
-                    weight: row.weight_kg
+                    weight: row.weight_kg,
+                    distance: row.distance_km,
+                    duration: row.duration_seconds
                 });
             }
         });
 
-    const exerciseData = Array.from(sessionsMap.values())
-        .sort((a, b) => a.date - b.date);
+    const sessionList = Array.from(sessionsMap.values()).sort((a, b) => a.date - b.date);
 
-    document.getElementById('progressChartTitle').textContent = `Progreso de Peso - ${selectedExercise}`;
+    // Detectar si todos los pesos son iguales (cardio), o si hay variación (fuerza)
+    const hasVariableWeight = sessionList.some(d => d.weight !== sessionList[0].weight);
+    const isCardio = !hasVariableWeight && sessionList.length > 1;
+
+    const yLabel = isCardio ? 'Distancia (km) / Duración (s)' : `${selectedExercise} (kg)`;
+    const chartData = sessionList.map(d => ({
+        date: d.date,
+        value: isCardio ? (d.distance || d.duration || 0) : d.weight
+    }));
+
+    document.getElementById('progressChartTitle').textContent = `Progreso - ${selectedExercise}`;
 
     const ctx = document.getElementById('progressChart').getContext('2d');
     if (charts.progress) charts.progress.destroy();
 
-    if (exerciseData.length === 0) {
-        // Mostrar mensaje de no datos
+    if (chartData.length === 0) {
+        // Mostrar mensaje si no hay datos
         ctx.font = '16px Segoe UI';
         ctx.fillStyle = '#7f8c8d';
         ctx.textAlign = 'center';
@@ -297,10 +308,10 @@ function createProgressChart() {
     charts.progress = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: exerciseData.map(d => d.date.toLocaleDateString()),
+            labels: chartData.map(d => d.date.toLocaleDateString()),
             datasets: [{
-                label: `${selectedExercise} (kg)`,
-                data: exerciseData.map(d => d.weight),
+                label: yLabel,
+                data: chartData.map(d => d.value),
                 borderColor: '#2c3e50',
                 backgroundColor: 'rgba(44, 62, 80, 0.1)',
                 borderWidth: 2,
@@ -340,6 +351,7 @@ function createProgressChart() {
         }
     });
 }
+
 
 function createFrequencyChart() {
     const dayFrequency = {};
