@@ -63,7 +63,14 @@ function processFile(file) {
             }
             
             workoutData = results.data;
+            // Mostrar las primeras 5 fechas para depuración
+            const sampleDates = results.data.slice(0, 5).map(row => row.start_time);
+            console.log('Fechas de ejemplo en ' + file.name + ':', sampleDates);
             processData();
+            if (workoutData.length === 0) {
+                showError('No se encontraron datos válidos en el archivo. Verifica el formato de las fechas. Ejemplo: ' + sampleDates.join(', '));
+                return;
+            }
             populateExerciseSelect();
             applyTimeFilter();
             showStats();
@@ -74,11 +81,67 @@ function processFile(file) {
     });
 }
 
+
 function showError(message) {
     errorContainer.innerHTML = `<div class="error">${message}</div>`;
     statsContainer.classList.add('hidden');
     controlsContainer.classList.add('hidden');
 }
+
+function parseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') {
+        console.warn('Fecha inválida:', dateStr);
+        return null;
+    }
+
+    // Mapeo de meses en inglés y español (abreviados)
+    const monthMap = {
+        'jan': 0, 'ene': 0, // Enero
+        'feb': 1, // Febrero
+        'mar': 2, // Marzo
+        'apr': 3, 'abr': 3, // Abril
+        'may': 4, // Mayo
+        'jun': 5, // Junio
+        'jul': 6, // Julio
+        'aug': 7, 'ago': 7, // Agosto
+        'sep': 8, // Septiembre
+        'oct': 9, // Octubre
+        'nov': 10, // Noviembre
+        'dec': 11, 'dic': 11 // Diciembre
+    };
+
+    try {
+        // Ejemplo: "30 Apr 2025, 10:33" o "29 abr 2025, 16:25"
+        const regex = /^(\d{1,2})\s+([a-zA-Z]{3})\s+(\d{4}),\s+(\d{1,2}):(\d{2})$/;
+        const match = dateStr.match(regex);
+        if (!match) {
+            console.warn('Formato de fecha no reconocido:', dateStr);
+            return null;
+        }
+
+        const [, day, monthStr, year, hour, minute] = match;
+        const monthLower = monthStr.toLowerCase();
+        const month = monthMap[monthLower];
+
+        if (month === undefined) {
+            console.warn('Mes no reconocido:', monthStr);
+            return null;
+        }
+
+        const date = new Date(year, month, day, hour, minute);
+        if (isNaN(date.getTime())) {
+            console.warn('Fecha inválida después de parsear:', dateStr);
+            return null;
+        }
+
+        return date;
+    } catch (e) {
+        console.error('Error al parsear fecha:', dateStr, e);
+        return null;
+    }
+}
+
+
 
 function processData() {
     // Limpiar datos y convertir tipos
@@ -88,9 +151,9 @@ function processData() {
         reps: parseInt(row.reps) || 0,
         duration_seconds: parseInt(row.duration_seconds) || 0,
         rpe: parseFloat(row.rpe) || 0,
-        start_time: new Date(row.start_time),
-        end_time: new Date(row.end_time)
-    })).filter(row => !isNaN(row.start_time.getTime()));
+        start_time: parseDate(row.start_time),
+        end_time: parseDate(row.end_time)
+    })).filter(row => row.start_time && !isNaN(row.start_time.getTime()));
 }
 
 function populateExerciseSelect() {
@@ -261,10 +324,10 @@ function createVolumeChart() {
 
 function createProgressChart() {
     const selectedExercise = exerciseSelect.value;
-
-    // Construir sesiones únicas por título-fecha para ese ejercicio
+    
+    // Obtener peso máximo por sesión (día + título)
     const sessionsMap = new Map();
-
+    
     filteredData
         .filter(row => row.exercise_title === selectedExercise)
         .forEach(row => {
@@ -272,32 +335,21 @@ function createProgressChart() {
             if (!sessionsMap.has(sessionKey) || sessionsMap.get(sessionKey).weight < row.weight_kg) {
                 sessionsMap.set(sessionKey, {
                     date: row.start_time,
-                    weight: row.weight_kg,
-                    distance: row.distance_km,
-                    duration: row.duration_seconds
+                    weight: row.weight_kg
                 });
             }
         });
 
-    const sessionList = Array.from(sessionsMap.values()).sort((a, b) => a.date - b.date);
+    const exerciseData = Array.from(sessionsMap.values())
+        .sort((a, b) => a.date - b.date);
 
-    // Detectar si todos los pesos son iguales (cardio), o si hay variación (fuerza)
-    const hasVariableWeight = sessionList.some(d => d.weight !== sessionList[0].weight);
-    const isCardio = !hasVariableWeight && sessionList.length > 1;
-
-    const yLabel = isCardio ? 'Distancia (km) / Duración (s)' : `${selectedExercise} (kg)`;
-    const chartData = sessionList.map(d => ({
-        date: d.date,
-        value: isCardio ? (d.distance || d.duration || 0) : d.weight
-    }));
-
-    document.getElementById('progressChartTitle').textContent = `Progreso - ${selectedExercise}`;
+    document.getElementById('progressChartTitle').textContent = `Progreso de Peso - ${selectedExercise}`;
 
     const ctx = document.getElementById('progressChart').getContext('2d');
     if (charts.progress) charts.progress.destroy();
 
-    if (chartData.length === 0) {
-        // Mostrar mensaje si no hay datos
+    if (exerciseData.length === 0) {
+        // Mostrar mensaje de no datos
         ctx.font = '16px Segoe UI';
         ctx.fillStyle = '#7f8c8d';
         ctx.textAlign = 'center';
@@ -308,10 +360,10 @@ function createProgressChart() {
     charts.progress = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: chartData.map(d => d.date.toLocaleDateString()),
+            labels: exerciseData.map(d => d.date.toLocaleDateString()),
             datasets: [{
-                label: yLabel,
-                data: chartData.map(d => d.value),
+                label: `${selectedExercise} (kg)`,
+                data: exerciseData.map(d => d.weight),
                 borderColor: '#2c3e50',
                 backgroundColor: 'rgba(44, 62, 80, 0.1)',
                 borderWidth: 2,
@@ -351,7 +403,6 @@ function createProgressChart() {
         }
     });
 }
-
 
 function createFrequencyChart() {
     const dayFrequency = {};
